@@ -9,6 +9,7 @@ const OUTPUT_DIR = path.resolve(__dirname, "output");
 const outputPath = path.join(OUTPUT_DIR, "team.html");
 
 const render = require("./lib/htmlRenderer");
+const Choices = require("inquirer/lib/objects/choices");
 
 
 // Write code to use inquirer to gather information about the development team members,
@@ -16,34 +17,83 @@ const render = require("./lib/htmlRenderer");
 const employeeInfo = [
     {
         type: 'input',
-        message: 'Enter the name of the manager',
+        message: 'Enter the name of the employee',
         name: 'name'
     },
     {
         type: 'input',
-        message: 'Enter the ID number of the manager',
+        message: 'Enter the ID number of the employee',
         name: 'id'
     },
     {
         type: 'input',
-        message: 'Enter the email address of the manager',
+        message: 'Enter the email address of the employee',
         name: 'email'
+    },
+    { 
+        type: 'list',
+        message: 'What is your role?',
+        name: 'role',
+        choices: ["Manager", "Intern", "Engineer"]
     },
     {
         type: 'input',
         message: 'Enter the office number of the manager',
-        name: 'officeNumber'
+        name: 'officeNumber',
+        when: (answers) => answers.role === "Manager"
     },
-    { 
+    {
         type: 'input',
-        message: 'What is your role?',
-        name: 'role'
-    }
+        message: 'Enter the school of the intern',
+        name: 'school',
+        when: (answers) => answers.role === "Intern"
+    },
+    {
+        type: 'input',
+        message: 'Enter the Engineers GitHub profile',
+        name: 'gitHub',
+        when: (answers) => answers.role === "Engineer"
+    },
 
+]; 
+const employees = [];
 
-]; inquirer.prompt(employeeInfo).then((answers) => {
-    if (answers.role === "Engineer") console.log("hey")
-})
+function promptEmployee() {
+    inquirer.prompt(employeeInfo).then((answers) => {
+    
+        if (answers.role === "Engineer") {
+            let e = new Engineer(answers.name, answers.id, answers.email, answers.role, answers.gitHub)
+            employees.push(e);
+        }
+        if (answers.role === "Intern") {
+            let i = new Intern(answers.name, answers.id, answers.email, answers.role, answers.school)
+            employees.push(i);
+        }
+        if (answers.role === "Manager") {
+            let m = new Manager(answers.name, answers.id, answers.email, answers.role, answers.officeNumber)
+            employees.push(m);
+        }
+    
+        askForAnotherEmployee();
+    });
+}
+
+function askForAnotherEmployee() {
+    inquirer.prompt([{
+        type: "confirm",
+        message: "Do you want to input another employee?",
+        name: "choice"
+    }]).then((answers) => {
+        if (answers.choice) {
+            promptEmployee();
+        } else {
+            fs.writeFile("./output/team.html", render(employees), (err) =>
+                err ? console.error(err) : console.log("file written"));
+        }
+    });
+}
+
+promptEmployee();
 
 
 
